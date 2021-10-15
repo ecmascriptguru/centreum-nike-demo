@@ -16,3 +16,20 @@ Resources:
         WriteCapacityUnits: ${self:custom.tableThroughputs.${self:provider.stage}}
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
+  ProductsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.productsTable}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: name
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

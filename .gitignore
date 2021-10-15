@@ -1,5 +1,10 @@
 node_modules/
 .serverless/
+.serverless-offline/
+target/
+/.settings/
+.project
+.classpath
 
 *.pyc
 *.pem

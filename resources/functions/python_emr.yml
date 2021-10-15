@@ -1,11 +1,7 @@
 startEMRJob:
   handler: src/handler.start_emr_job
-  environment:
-    CONTACTS_TABLE: ${self:custom.contactsTable}
-    SUBNET_ID: !Ref PrivateSubnetC
-    EMR_LOGS_BUCKET:
-      Ref: LogBucket
-    CSV_IMPORT_BUCKET: ${self:custom.csvImportBucketName}
+  runtime: python3.8
+  timeout: 300
   events:
     - s3:
         bucket: ${self:custom.csvImportBucketName}

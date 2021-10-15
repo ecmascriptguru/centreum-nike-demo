@@ -1,0 +1,24 @@
+listProducts:
+  handler: com.serverless.ListProductsHandler
+  events:
+    - http:
+        path: /products
+        method: get
+getProduct:
+  handler: com.serverless.GetProductHandler
+  events:
+    - http:
+        path: /products/{id}
+        method: get
+createProduct:
+  handler: com.serverless.CreateProductHandler
+  events:
+    - http:
+        path: /products
+        method: post
+deleteProduct:
+  handler: com.serverless.DeleteProductHandler
+  events:
+    - http:
+        path: /products/{id}
+        method: delete
