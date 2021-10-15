@@ -1,0 +1,39 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12.x
+      python: 3.8
+    commands:
+      - echo "Install Prequisites"
+      - cd $CODEBUILD_SRC_DIR
+      - mkdir ./serverless-package
+      - chmod +x cicd/scripts/aws-profile-setup.sh
+      - chmod +x cicd/scripts/post_deploy.sh
+      - npm install
+      - npm install -g serverless
+  build:
+    commands:
+      - echo Start $STAGE
+      - cd $CODEBUILD_SRC_DIR
+      ##################################### Generate serverless package. ###################################
+      - . ./cicd/scripts/aws-profile-setup.sh
+      - sls package --package serverless-package --stage $STAGE --targetAccountId $TARGET_ACCOUNT_ID --cfnRoleArn $CF_EXECUTION_ROLE
+      - ls serverless-package
+      #######################################################################################################
+      # Deploy serverless package
+      - sls deploy --package serverless-package --stage $STAGE --targetAccountId $TARGET_ACCOUNT_ID --cfnRoleArn $CF_EXECUTION_ROLE
+      - echo "End Deploy"
+
+  post_build:
+    commands:
+      - . ./cicd/scripts/post_deploy.sh
+
+artifacts:
+  # files:
+  #   # Build Artifact containing API Endpoint
+  #   - api-endpoint.txt
+  discard-paths: no
+  base-directory: $CODEBUILD_SRC_DIR
+  
