@@ -1,0 +1,200 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The AWS CloudFormation template for creating cross account role to be assumed by TOOLS account to carry out deployment in this child account where the role would be created
+
+Parameters:
+  ProjectName:
+    Description: Please give the project name. This will be used all across the stack as identifier.
+    Type: String
+    Default: centreum-demo
+  ToolsAccountID:
+    Description : Account ID of the TOOLS AWS Account that initiates code deployment to this account.
+    Type: String
+    Default: '058464901497'
+    ConstraintDescription: Must be a valid AWS Account ID without hyphens.
+    AllowedPattern: '\d{12}'
+    MinLength: 12
+    MaxLength: 12
+
+Resources:
+  CrossAccountDeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub cross-account-role-${ProjectName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub arn:aws:iam::${ToolsAccountID}:root
+            Action:
+              - sts:AssumeRole
+
+  CrossAccountDeploymentPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows pipeline in master account to deploy API Gateway, Lambda
+      ManagedPolicyName: !Sub cross-account-policy-${ProjectName}
+      Roles:
+        - !Ref CrossAccountDeploymentRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: IAMRolesPermissions
+            # Needed for passing CFExecutionRole to Cloudformation Service
+            Effect: Allow
+            Action:
+              - iam:PassRole
+              - iam:GetRole
+              - iam:CreateRole
+              - iam:PutRolePolicy
+            Resource: '*'
+          - Sid: S3FullAccess
+            # To Get and Put deployment artifacts in serverless deployment bucket
+            Effect: Allow
+            Action:
+              - s3:*
+            Resource: '*'
+          - Sid: CloudFormationFullAccess
+            # To create serverless deployment cloudformation stack
+            Effect: Allow
+            Action:
+              - cloudformation:*
+            Resource: '*'
+          - Sid: APIGatewayReadOnlyAccess
+            # Used by sls deploy to list information of all its APIs
+            Effect: Allow
+            Action:
+              - apigateway:*
+            Resource: 
+              - !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis'
+              - !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/*'
+          - Sid: APIGatewayTaggingAccess
+            # Used by sls deploy to put Tags to its APIs
+            Effect: Allow
+            Action:
+              - apigateway:PUT
+            Resource: 
+              - !Sub 'arn:aws:apigateway:${AWS::Region}::/tags/*'
+          - Sid: LambdaLayerAccess
+            Effect: Allow
+            Action:
+              - lambda:*
+            Resource:
+              - '*'
+          - Sid: CloudWatchLogsAccess
+            Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - '*'
+          - Sid: DynamoDBAccess
+            Effect: Allow
+            Action:
+              - dynamodb:*
+            Resource:
+              - '*'
+
+  CFExecutionRole:
+    Type: AWS::IAM::Role
+    DependsOn: CrossAccountDeploymentRole
+    Properties:
+      RoleName: !Sub execution-role-${ProjectName}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - cloudformation.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  CFExecutionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows pipeline in TOOLS account to deploy API Gateway, Lambda
+      ManagedPolicyName: !Sub cf-execution-policy-${ProjectName}
+      Roles:
+        - !Ref CFExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: IAMRolesPermissions
+            # Needed for creating Roles for Lambdas, EC2 instances and other services
+            Effect: Allow
+            Action:
+              - iam:Get*
+              - iam:List*
+              - iam:*Role*
+              - iam:CreatePolicy
+              - iam:DeletePolicy
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:*PolicyVersion*
+              - iam:*InstanceProfile*
+            Resource: '*'
+          - Sid: S3FullAccess
+            # To Get and Put deployment artifacts in serverless deployment bucket
+            Effect: Allow
+            Action:
+              - s3:*
+            Resource: '*'
+          - Sid: CloudFormationFullAccess
+            # To create CF stack for serverless deployment
+            Effect: Allow
+            Action:
+              - cloudformation:*
+            Resource: '*'
+          - Sid: ApiGatewayFullAccess
+            # API Gateway
+            Effect: Allow
+            Action:
+              - apigateway:*
+            Resource: '*'
+          - Sid: LambdaFullAccess
+            # Lambda
+            Effect: Allow
+            Action:
+              - lambda:*
+            Resource: '*'
+          - Sid: DynamoDBFullAccess
+            # DynamoDB
+            Effect: Allow
+            Action:
+              - dynamodb:*
+            Resource: '*'
+          - Sid: Cloudwatch
+            # To access cloudwatch logs
+            Effect: Allow
+            Action:
+              - cloudwatch:*
+              - logs:*
+              - events:*
+            Resource: '*'
+
+Outputs:
+  OutCrossAccountDeploymentRole:
+    Description: Cross Account Deployment Role ARN
+    Value: !GetAtt CrossAccountDeploymentRole.Arn
+    Export:
+      Name: !Sub ${ProjectName}-Serverless-CrossAccount-DeploymentRoleArn
+  OutCrossAccountDeploymentPolicy:
+    Description: Cross Account Deployment Policy ARN
+    Value: !Ref CrossAccountDeploymentPolicy
+    Export:
+      Name: !Sub ${ProjectName}-Serverless-CrossAccount-DeploymentPolicyArn
+
+  OutCFExecutionRole:
+    Description: CloudFormation Execution Role ARN
+    Value: !GetAtt CFExecutionRole.Arn
+    Export:
+      Name: !Sub ${ProjectName}-Serverless-CFExecutionRoleArn
+  OutCrossAccountDeploymentPolicy:
+    Description: CloudFormation Execution Policy ARN
+    Value: !Ref CFExecutionPolicy
+    Export:
+      Name: !Sub ${ProjectName}-Serverless-CFExecutionPolicyArn

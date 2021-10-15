@@ -1,0 +1,588 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: The AWS CloudFormation template for building a CICD pipeline for cross account deployment to S3 bucket.
+
+Parameters:
+  ProjectName:
+    Description: The name identifying this project.
+    Type: String
+    Default: centreum-demo
+    AllowedValues:
+      - centreum-demo
+
+  # Account Id of the deployment target.
+  DevAccountID:
+    Description : Dev Account ID of the target account where the deployment will happen.
+    Type: String
+    Default: '561789658853'
+    ConstraintDescription: Must be a valid AWS Account ID without hyphens.
+    AllowedPattern: '\d{12}'
+    MinLength: 12
+    MaxLength: 12
+  ProdAccountID:
+    Description: Production Account ID of the target account where the deployment will happen.
+    Type: String
+    Default: '534732747354'
+    ConstraintDescription: Must be a valid AWS Account ID without hyphens.
+    AllowedPattern: '\d{12}'
+    MinLength: 12
+    MaxLength: 12
+  # Deployment Target Environment
+  DevDeploymentEnvironment:
+    Type: String
+    Description: Select name of the environment to which the pipeline is deploying.
+    Default: dev
+    AllowedValues:
+      - dev
+  ProdDeploymentEnvironment:
+    Type: String
+    Description: Select name of the environment to which the pipeline is deploying.
+    Default: prod
+    AllowedValues:
+      - prod
+  # Cross Account Role to be assumed by code pipeline to carry out deployment
+  CodePipelineAssumeRoleName:
+    Type: String
+    Description: Cross Account Role to be assumed by code pipeline to carry out deployment
+    Default: cross-account-role-centreum-demo
+  # Cloudformation Service Role to create serverless resources
+  CFExecutionRoleName:
+    Type: String
+    Description: Cross Account Role to be assumed by Cloudformation Service to create serverless resources
+    Default: execution-role-centreum-demo
+  # Source Code Repository for pipeline
+  RepositoryName:
+    Type: String
+    Description: Enter the name of code commit repo.
+    Default: centreum-demo
+  # Source Code Branch for pipeline
+  CodeCommitRepoBranch:
+    Type: String
+    Description: Enter the branch name of code commit repo.
+    Default: master
+    AllowedValues:
+      # - develop
+      # - release
+      - master
+
+Resources:
+  ################################ CODECOMMIT REPO ################################
+  Repository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryDescription: Repo for Serverless Lambda API
+      RepositoryName: !Ref RepositoryName
+  ################################ END CODECOMMIT REPO ################################
+
+  # CodePipeline Config
+  CodeDeployToDev:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Join [ '-', [ !GetAtt Repository.Name, !Join [ '-', !Split [ '/', !Ref CodeCommitRepoBranch ] ], !Ref DevDeploymentEnvironment ]]
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Environment:
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          -
+            Name: CROSS_ACCOUNT_ROLE
+            Type: PLAINTEXT
+            Value: !Sub 'arn:aws:iam::${DevAccountID}:role/${CodePipelineAssumeRoleName}'
+          -
+            Name: CF_EXECUTION_ROLE
+            Type: PLAINTEXT
+            Value: !Sub 'arn:aws:iam::${DevAccountID}:role/${CFExecutionRoleName}'
+          -
+            Name: TARGET_ACCOUNT_ID
+            Type: PLAINTEXT
+            Value: !Ref DevAccountID
+          -
+            Name: STAGE
+            Type: PLAINTEXT
+            Value: !Ref DevDeploymentEnvironment
+      Tags:
+        - Key: category
+          Value: interview
+        - Key: project_name
+          Value: centreum-demo
+  CodeDeployToProd:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Join [ '-', [ !GetAtt Repository.Name, !Join [ '-', !Split [ '/', !Ref CodeCommitRepoBranch ] ], !Ref ProdDeploymentEnvironment ]]
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Environment:
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          -
+            Name: CROSS_ACCOUNT_ROLE
+            Type: PLAINTEXT
+            Value: !Sub 'arn:aws:iam::${ProdAccountID}:role/${CodePipelineAssumeRoleName}'
+          -
+            Name: CF_EXECUTION_ROLE
+            Type: PLAINTEXT
+            Value: !Sub 'arn:aws:iam::${ProdAccountID}:role/${CFExecutionRoleName}'
+          -
+            Name: TARGET_ACCOUNT_ID
+            Type: PLAINTEXT
+            Value: !Ref ProdAccountID
+          -
+            Name: STAGE
+            Type: PLAINTEXT
+            Value: !Ref ProdDeploymentEnvironment
+      Tags:
+        - Key: category
+          Value: interview
+        - Key: project_name
+          Value: centreum-demo
+
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Join [ '-', [ !GetAtt Repository.Name, !Join [ '-', !Split [ '/', !Ref CodeCommitRepoBranch ] ] ]]
+      ArtifactStore:
+        Location: !Ref CodePipelineS3Bucket
+        Type: S3
+      RestartExecutionOnUpdate: True
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit
+                Version: 1
+              RunOrder: 10
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Configuration:
+                BranchName: !Ref CodeCommitRepoBranch
+                PollForSourceChanges: False
+                RepositoryName: !GetAtt Repository.Name
+        - Name: DeployToDev
+          Actions:
+            - Name: Deploy-To-Dev
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              RunOrder: 20
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: DevDeployArtifact
+              Configuration:
+                ProjectName: !Ref CodeDeployToDev
+        - Name: ManualApproveToProduction
+          Actions:
+            - Name: Approve
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: 1
+              RunOrder: 30
+              Configuration:
+                CustomData: "Please test dev encironment before approving this."
+        - Name: DeployToProduction
+          Actions:
+            - Name: Deploy-To-Production
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              RunOrder: 20
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: ProdDeployArtifact
+              Configuration:
+                ProjectName: !Ref CodeDeployToProd
+
+  CodeCheckinCloudWatchEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: CloudWatch event rule to trigger CICD pipeline upon code check into code commit repo
+      EventPattern:
+        source:
+          - aws.codecommit
+        detail-type:
+          - "CodeCommit Repository State Change"
+        resources:
+          - !GetAtt Repository.Arn
+        detail:
+          event:
+            - referenceCreated
+            - referenceUpdated
+          referenceType:
+            - branch
+          referenceName:
+            - !Ref CodeCommitRepoBranch
+      Name: !Join [ '-', [ !GetAtt Repository.Name, !Join [ '-', !Split [ '/', !Ref CodeCommitRepoBranch ] ] ]]
+      State: ENABLED
+      Targets:
+        -
+          Arn: !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${CodePipeline}
+          Id: !Join [ '-', [ !Sub 'Serverless-Deployment-Pipeline', !Join [ '-', !Split [ '/', !Ref CodeCommitRepoBranch ] ] ]]
+          RoleArn: !GetAtt CloudWatchPipelineTriggerRole.Arn
+
+  ############################# PRE-REQUISITES FOR PIPELINE ################################
+  CodePipelineKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMS key for pipeline S3 bucket encryption
+      Enabled: true
+      EnableKeyRotation: true
+      KeyPolicy:
+          Version: '2012-10-17'
+          Id: centreum-demo-codepipeline-key
+          Statement:
+            - Sid: KmsAllowKeyAdministration
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              Action:
+                - 'kms:*'
+              Resource: '*'
+            - Sid: KmsAllowKeyUsage
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !GetAtt CodePipelineRole.Arn
+              Action:
+                - kms:Decrypt
+                - kms:DescribeKey
+                - kms:Encrypt
+                - kms:GenerateDataKey
+                - kms:GenerateDataKeyWithoutPlainText
+                - kms:ReEncrypt
+                - kms:ReEncryptTo
+                - kms:ReEncryptFrom
+                - kms:TagResource
+                - kms:CreateKey
+              Resource: '*'
+      Tags:
+        - Key: category
+          Value: interview
+        - Key: project_name
+          Value: centreum-demo
+
+  CodePipelineKMSAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${ProjectName}-codepipeline-key
+      TargetKeyId: !GetAtt CodePipelineKMSKey.Arn
+
+  CodePipelineS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-codepipeline-bucket-${AWS::Region}-${AWS::AccountId}'
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+          - Id: LccRule1-ExpireAllNoncurrentIn8Days
+            NoncurrentVersionExpirationInDays: 8
+            Prefix: ''
+            Status: Enabled
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration :
+          -
+            ServerSideEncryptionByDefault:
+              KMSMasterKeyID: !GetAtt CodePipelineKMSKey.Arn
+              SSEAlgorithm: aws:kms
+      Tags:
+        - Key: category
+          Value: interview
+        - Key: project_name
+          Value: centreum-demo
+
+  CodePipelineS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CodePipelineS3Bucket
+      PolicyDocument:
+        Statement:
+          -
+            Action:
+              - s3:List*
+              - s3:Get*
+              - s3:Put*
+              - s3:Delete*
+              - s3:AbortMultipartUpload
+              - s3:RestoreObject
+              - s3:ListMultipartUploadParts
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:s3:::${CodePipelineS3Bucket}
+              - !Sub arn:aws:s3:::${CodePipelineS3Bucket}/*
+            Principal:
+              AWS:
+                - !GetAtt CodePipelineRole.Arn
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-CodeBuild-Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  CodeBuildPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allows CodeBuild to perform builds and deploys
+      ManagedPolicyName: !Sub ${ProjectName}-CodeBuild-Policy
+      Roles:
+        - !Ref CodeBuildRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -  # Allow codebuild to perform encryption and decryption
+            Sid: KMSPolicy
+            Effect: Allow
+            Action:
+              - kms:DescribeKey
+              - kms:GetKeyPolicy
+              - kms:List*
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:Generate*
+            Resource:
+              - !GetAtt CodePipelineKMSKey.Arn
+          -  # Allow codebuild to write to cloudwatch
+            Sid: CloudWatchLogsPermissionsForAllCodeBuildProjects
+            Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*:*
+          -  # Allow codebuild to list and get objects from any bucket
+            Sid: S3BucketPolicy
+            Effect: Allow
+            Action:
+              - s3:GetBucket*
+              - s3:ListBucket*
+            Resource:
+              - !GetAtt CodePipelineS3Bucket.Arn
+          -  # Allow codebuild to get objects from codepipeline service buckets
+            Sid: S3ObjectPolicy
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:DeleteObject
+              - s3:GetObjectVersion
+            Resource:
+              - !Sub ${CodePipelineS3Bucket.Arn}/*
+          -  # Allow codebuild to assume cross account role
+            Sid: CrossAccountAssumeRolePolicy
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource:
+              - !Sub 'arn:aws:iam::${DevAccountID}:role/${CodePipelineAssumeRoleName}'
+              - !Sub 'arn:aws:iam::${ProdAccountID}:role/${CodePipelineAssumeRoleName}'
+          -  # Allow codebuild to access repos
+            Sid: CodeCommitAccessPolicy
+            Effect: Allow
+            Action:
+              - codecommit:*
+            Resource:
+              - !GetAtt Repository.Arn
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-CodePipeline-Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        -
+          Effect: Allow
+          Action:
+            - sts:AssumeRole
+          Principal:
+            Service:
+              # Only CodePipeline service can assume this role
+              # No one else can assume this role
+              - codepipeline.amazonaws.com
+
+  CodePipelinePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: allows cloudformation to create/update/delete IAM Roles
+      ManagedPolicyName: !Sub ${ProjectName}-CodePipeline-Policy
+      Roles:
+        - !Ref CodePipelineRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -  # Allow codepipeline to perform encryption and decryption
+            Sid: KMSPolicy
+            Effect: Allow
+            Action:
+              - kms:DescribeKey
+              - kms:GetKeyPolicy
+              - kms:List*
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:Generate*
+            Resource:
+              - !GetAtt CodePipelineKMSKey.Arn
+          -  # Allow codepipeline to get from our repos
+            Sid: CodeCommitPermissions
+            Effect: Allow
+            Action:
+              - codecommit:GetBranch
+              - codecommit:GetCommit
+              - codecommit:UploadArchive
+              - codecommit:GetUploadArchiveStatus
+              - codecommit:CancelUploadArchive
+            Resource:
+              - !GetAtt Repository.Arn
+          -  # Allow codepipeline to list and get objects from any bucket
+            Sid: S3BucketPolicy
+            Effect: Allow
+            Action:
+              - s3:GetBucket*
+              - s3:ListBucket*
+            Resource:
+              - !GetAtt CodePipelineS3Bucket.Arn
+          -  # Allow codepipeline to put and get objects from codepipeline service buckets
+            Sid: S3ObjectPolicy
+            Effect: Allow
+            Action:
+              - s3:AbortMultipartUpload
+              - s3:GetObject*
+              - s3:PutObject*
+              - s3:DeleteObject*
+              - s3:RestoreObject
+              - s3:ListMultipartUploadParts
+            Resource:
+              - !Sub ${CodePipelineS3Bucket.Arn}/*
+          -  # Allow codepipeline to pass role to codebuild
+            Sid: PassRolePolicy
+            Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource:
+              - '*'
+          -  # Allow codepipeline to start codebuild
+            Sid: CodeBuildPolicy
+            Effect: Allow
+            Action:
+              - codebuild:StartBuild
+              - codebuild:BatchGetBuilds
+            Resource:
+              - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/*"
+          -  # Allow codepipeline to assume cross account role
+            Sid: CrossAccountAssumeRolePolicy
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource:
+              - !Sub arn:aws:iam::${DevAccountID}:role/${CodePipelineAssumeRoleName}
+              - !Sub arn:aws:iam::${ProdAccountID}:role/${CodePipelineAssumeRoleName}
+
+  CloudWatchPipelineTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-CloudWatch-Pipeline-Trigger
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                  - events.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${ProjectName}-CloudWatch-Pipeline-Trigger-Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codepipeline:StartPipelineExecution
+                Resource: # Allow CloudWatch to trigger any pipeline
+                  - !Sub arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:*
+  ############################### END PRE-REQUISITES ######################################
+
+Outputs:
+  OutCodePipeline:
+    Description: CICD Pipeline Name
+    Value: !Ref CodePipeline
+    Export:
+      Name: !Sub ${ProjectName}-CodePipelineName
+  OutCodePipelineURL:
+    Value: !Sub "https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${CodePipeline}"
+    Export:
+      Name: !Sub ${ProjectName}-CodePipelineUrl
+  OutCodeCommitRepoARN:
+    Value: !GetAtt Repository.Arn
+    Description: ARN for the Serverless Lambda Api Repo
+    Export:
+      Name: !Sub ${ProjectName}-lambda-api-repo-arn
+  OutCodeCommitRepoURL:
+    Value: !GetAtt Repository.CloneUrlHttp
+    Description: The URL to be used for Cloning over HTTPS
+    Export:
+      Name: !Sub ${ProjectName}-lambda-api-repo-url
+  OutCodeBuildRoleArn:
+    Value: !GetAtt CodeBuildRole.Arn
+    Description: ARN for CodeBuild Role
+    Export:
+      Name: !Sub ${ProjectName}-CodeBuildRoleArn
+  OutCodePipelineRoleArn:
+    Value: !GetAtt CodePipelineRole.Arn
+    Description: ARN for CodePipeline Role
+    Export:
+      Name: !Sub ${ProjectName}-CodePipelineRoleArn
+  OutCloudWatchPipelineTriggerRoleArn:
+    Value: !GetAtt CloudWatchPipelineTriggerRole.Arn
+    Description: ARN for CloudWatch Events to trigger CodePipeline
+    Export:
+      Name: !Sub ${ProjectName}-CloudWatchPipelineTriggerRoleArn
+  OutCodePipelineKMSKeyArn:
+    Value: !GetAtt CodePipelineKMSKey.Arn
+    Description: ARN for Pipeline KMS Key
+    Export:
+      Name: !Sub ${ProjectName}-CodePipelineKMSKeyArn
+  OutCodePipelineS3Bucket:
+    Value: !Ref CodePipelineS3Bucket
+    Description: Name of CodePipeline S3 Bucket
+    Export:
+      Name: !Sub ${ProjectName}-CodePipelineS3BucketName
+  OutCodePipelineS3BucketArn:
+    Value: !GetAtt CodePipelineS3Bucket.Arn
+    Description: ARN of CodePipeline S3 Bucket
+    Export:
+      Name: !Sub ${ProjectName}-CodePipelineS3BucketArn
