@@ -1,0 +1,75 @@
+service: nike-devops-demo
+
+package:
+  include:
+    - "scripts/*.q"
+    - "src/*.py"
+  exclude:
+    - "**/*"
+plugins:
+  - serverless-python-requirements
+  - serverless-pseudo-parameters
+
+provider:
+  stage: ${opt:stage, 'dev'}
+  timeout: 300
+  name: aws
+  runtime: python3.8
+  region: us-east-1
+  vpc:
+    securityGroupIds:
+      - !Ref VpcDefaultSecurityGroup
+    subnetIds:
+      - !Ref PrivateSubnetA
+      - !Ref PrivateSubnetB
+      - !Ref PrivateSubnetC
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "iam:PassRole"
+      Resource:
+        - arn:aws:iam::#{AWS::AccountId}:role/EMR_DefaultRole
+        - arn:aws:iam::#{AWS::AccountId}:role/EMR_EC2_DefaultRole
+
+    - Effect: "Allow"
+      Action:
+        - "elasticmapreduce:RunJobFlow"
+        # - "autoscaling-plans:*"
+        # - "application-autoscaling:*"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "Fn::Join":
+            - ""
+            - - "arn:aws:s3:::"
+              - ${self:custom.csvImportBucketName}
+              - "/*"
+        - !Join ['', ['arn:aws:s3:::', !Ref LogBucket, '/emr-logs/*']]
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+      Resource:
+        - "Fn::GetAtt": [ContactsTable, Arn]
+        - "Fn::Join":
+            - "/"
+            - - { "Fn::GetAtt": [ContactsTable, Arn] }
+              - "index/*"
+
+functions:
+  - ${file(resources/function.yml)}
+
+custom:
+  contactsTable: contactsTable
+  csvImportBucketName: nike-${self:provider.stage}.csv.import.centreum.com
+  logBucketName: nike-${self:provider.stage}-logs.centreum.com
+  tableThroughputs:
+    production: "50"
+    dev: "5"
+
+resources:
+  - ${file(resources/s3.yml)}
+  - ${file(resources/vpc.yml)}
+  - ${file(resources/contacts_table.yml)}
+  - ${file(resources/emr.yml)}

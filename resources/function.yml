@@ -1,0 +1,16 @@
+startEMRJob:
+  handler: src/handler.start_emr_job
+  environment:
+    CONTACTS_TABLE: ${self:custom.contactsTable}
+    SUBNET_ID: !Ref PrivateSubnetC
+    EMR_LOGS_BUCKET:
+      Ref: LogBucket
+    CSV_IMPORT_BUCKET: ${self:custom.csvImportBucketName}
+  events:
+    - s3:
+        bucket: ${self:custom.csvImportBucketName}
+        event: s3:ObjectCreated:*
+        rules:
+          - prefix: uploads/
+          - suffix: .csv
+        existing: true
