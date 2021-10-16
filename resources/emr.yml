@@ -19,6 +19,11 @@ Resources:
             Principal:
               Service:
                 - elasticmapreduce.amazonaws.com
+          - Effect: Allow
+            Action:
+              - 'iam:CreateServiceLinkedRole'
+              - 'iam:PutRolePolicy'
+            Resource: '*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole
   JobFlowRole:
@@ -31,6 +36,11 @@ Resources:
             Principal:
               Service:
                 - ec2.amazonaws.com
+          - Effect: Allow
+            Action:
+              - 'iam:CreateServiceLinkedRole'
+              - 'iam:PutRolePolicy'
+            Resource: '*'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role
 
