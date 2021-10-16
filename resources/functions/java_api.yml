@@ -1,23 +1,35 @@
 listProducts:
+  runtime: java8
   handler: com.serverless.ListProductsHandler
+  package:
+    artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
         path: /products
         method: get
 getProduct:
+  runtime: java8
   handler: com.serverless.GetProductHandler
+  package:
+    artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
         path: /products/{id}
         method: get
 createProduct:
+  runtime: java8
   handler: com.serverless.CreateProductHandler
+  package:
+    artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
         path: /products
         method: post
 deleteProduct:
+  runtime: java8
   handler: com.serverless.DeleteProductHandler
+  package:
+    artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
         path: /products/{id}

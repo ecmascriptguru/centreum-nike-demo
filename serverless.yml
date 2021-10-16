@@ -7,6 +7,8 @@ custom:
   productsTable: productsTable
   csvImportBucketName: nike-${self:provider.stage}.csv.import.centreum.com
   logBucketName: nike-${self:provider.stage}-logs.centreum.com
+  pythonRequirements:
+    pythonBin: python3
   tableThroughputs:
     production: "50"
     dev: "5"
@@ -15,7 +17,6 @@ provider:
   stage: ${opt:stage, 'dev'}
   timeout: 30
   name: aws
-  runtime: java8
   region: us-east-1
   environment:
     CONTACTS_TABLE: ${self:custom.contactsTable}
@@ -84,7 +85,7 @@ resources:
   - ${file(resources/emr.yml)}
 
 package:
-  artifact: 'target/${self:service}-${self:provider.stage}.jar'
+  individually: true
   include:
     - "scripts/*.q"
     - "src/*.py"

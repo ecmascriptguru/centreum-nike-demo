@@ -5,7 +5,8 @@ phases:
     runtime-versions:
       nodejs: 12.x
       python: 3.8
-      java: corretto8
+      # java: corretto8
+      java: corretto11
     commands:
       - echo "Install Prequisites"
       - cd $CODEBUILD_SRC_DIR
@@ -14,6 +15,8 @@ phases:
       - chmod +x cicd/scripts/post_deploy.sh
       - npm install
       - npm install -g serverless
+      - sls --version
+      - java -version
   build:
     commands:
       - echo Start $STAGE
@@ -23,9 +26,10 @@ phases:
       - mvn clean install
       - sls package --package serverless-package --stage $STAGE --targetAccountId $TARGET_ACCOUNT_ID --cfnRoleArn $CF_EXECUTION_ROLE
       - ls serverless-package
-      #######################################################################################################
-      # Deploy serverless package
+      # #######################################################################################################
+      # # Deploy serverless package
       - sls deploy --package serverless-package --stage $STAGE --targetAccountId $TARGET_ACCOUNT_ID --cfnRoleArn $CF_EXECUTION_ROLE
+      # - sls deploy --stage $STAGE
       - echo "End Deploy"
 
   post_build:
