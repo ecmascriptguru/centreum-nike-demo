@@ -35,6 +35,9 @@ The tools account is the account where you will store the source code in CodeCom
 
 
 ### How to test
+Before getting started, at least an EMR cluster must be created inside the dev or production account. We should start the EMR job programmatically inside lambda function. In this case, aws requires a specific linked service role was initiated.
+So just go to EMR panel and create a simple EMR cluster with default option. And you can terminate it in a minute.
+
 I plaved a sample csv file in the working tree - `csv/contacts.csv`. You just need to copy to the s3 bucket by using the following command. Suppose that you want to test in dev account. You need to configure the credentials so as to execute the following command
 ```
 export ENV_NAME=dev
