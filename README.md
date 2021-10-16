@@ -1,5 +1,9 @@
 # Nike Assignment
 
+## Architecture
+This is the architecture diagram.
+![](docs/architecture.png?raw=true)
+
 ## Prepare AWS Accounts
 This deliverable assumes that you use 3 aws accounts - a shared service account (for deployment purpose) and 2 accounts (one is for dev and another is production).
 

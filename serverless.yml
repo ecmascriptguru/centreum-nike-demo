@@ -9,7 +9,7 @@ custom:
   pythonRequirements:
     pythonBin: python3
   tableThroughputs:
-    production: "50"
+    prod: "5"
     dev: "5"
 
 provider:

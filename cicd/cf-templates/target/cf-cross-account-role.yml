@@ -12,7 +12,7 @@ Parameters:
   ToolsAccountID:
     Description : Account ID of the TOOLS AWS Account that initiates code deployment to this account.
     Type: String
-    Default: ''
+    Default: '123456789123'
     ConstraintDescription: Must be a valid AWS Account ID without hyphens.
     AllowedPattern: '\d{12}'
     MinLength: 12
