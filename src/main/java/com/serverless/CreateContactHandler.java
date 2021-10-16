@@ -9,9 +9,9 @@ import org.apache.log4j.Logger;
 import java.util.Collections;
 import java.util.Map;
 
-import com.serverless.dal.Product;
+import com.serverless.dal.Contact;
 
-public class CreateProductHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
+public class CreateContactHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
 
 	private final Logger logger = Logger.getLogger(this.getClass());
 
@@ -22,25 +22,27 @@ public class CreateProductHandler implements RequestHandler<Map<String, Object>,
           // get the 'body' from input
           JsonNode body = new ObjectMapper().readTree((String) input.get("body"));
 
-          // create the Product object for post
-          Product product = new Product();
-          // product.setId(body.get("id").asText());
-          product.setName(body.get("name").asText());
-          product.setPrice((float) body.get("price").asDouble());
-          product.save(product);
+          // create the Contact object for post
+          Contact contact = new Contact();
+          // contact.setId(body.get("id").asText());
+          contact.setFullName(body.get("full_name").asText());
+          contact.setEmail(body.get("email").asText());
+          contact.setGender(body.get("gender").asText());
+          contact.setAddress(body.get("address").asText());
+          contact.save(contact);
 
           // send the response back
       		return ApiGatewayResponse.builder()
       				.setStatusCode(200)
-      				.setObjectBody(product)
+      				.setObjectBody(contact)
       				.setHeaders(Collections.singletonMap("X-Powered-By", "AWS Lambda & Serverless"))
       				.build();
 
       } catch (Exception ex) {
-          logger.error("Error in saving product: " + ex);
+          logger.error("Error in saving contact: " + ex);
 
           // send the error response back
-    			Response responseBody = new Response("Error in saving product: ", input);
+    			Response responseBody = new Response("Error in saving contact: ", input);
     			return ApiGatewayResponse.builder()
     					.setStatusCode(500)
     					.setObjectBody(responseBody)

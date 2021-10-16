@@ -9,9 +9,9 @@ import org.apache.log4j.Logger;
 import java.util.Collections;
 import java.util.Map;
 
-import com.serverless.dal.Product;
+import com.serverless.dal.Contact;
 
-public class GetProductHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
+public class DeleteContactHandler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
 
 	private final Logger logger = Logger.getLogger(this.getClass());
 
@@ -21,30 +21,29 @@ public class GetProductHandler implements RequestHandler<Map<String, Object>, Ap
     try {
         // get the 'pathParameters' from input
         Map<String,String> pathParameters =  (Map<String,String>)input.get("pathParameters");
-        String productId = pathParameters.get("id");
+        String contactId = pathParameters.get("id");
 
-        // get the Product by id
-        Product product = new Product().get(productId);
+        // get the Contact by id
+        Boolean success = new Contact().delete(contactId);
 
         // send the response back
-        if (product != null) {
+        if (success) {
           return ApiGatewayResponse.builder()
-      				.setStatusCode(200)
-      				.setObjectBody(product)
+      				.setStatusCode(204)
       				.setHeaders(Collections.singletonMap("X-Powered-By", "AWS Lambda & Serverless"))
       				.build();
         } else {
           return ApiGatewayResponse.builder()
       				.setStatusCode(404)
-              .setObjectBody("Product with id: '" + productId + "' not found.")
+      				.setObjectBody("Contact with id: '" + contactId + "' not found.")
       				.setHeaders(Collections.singletonMap("X-Powered-By", "AWS Lambda & Serverless"))
       				.build();
         }
     } catch (Exception ex) {
-        logger.error("Error in retrieving product: " + ex);
+        logger.error("Error in deleting contact: " + ex);
 
         // send the error response back
-  			Response responseBody = new Response("Error in retrieving product: ", input);
+  			Response responseBody = new Response("Error in deleting contact: ", input);
   			return ApiGatewayResponse.builder()
   					.setStatusCode(500)
   					.setObjectBody(responseBody)

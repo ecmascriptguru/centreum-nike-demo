@@ -1,36 +1,36 @@
-listProducts:
+listContacts:
   runtime: java8
-  handler: com.serverless.ListProductsHandler
+  handler: com.serverless.ListContactsHandler
   package:
     artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
-        path: /products
+        path: /contacts
         method: get
-getProduct:
+getContact:
   runtime: java8
-  handler: com.serverless.GetProductHandler
+  handler: com.serverless.GetContactHandler
   package:
     artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
-        path: /products/{id}
+        path: /contacts/{id}
         method: get
-createProduct:
+createContact:
   runtime: java8
-  handler: com.serverless.CreateProductHandler
+  handler: com.serverless.CreateContactHandler
   package:
     artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
-        path: /products
+        path: /contacts
         method: post
-deleteProduct:
+deleteContact:
   runtime: java8
-  handler: com.serverless.DeleteProductHandler
+  handler: com.serverless.DeleteContactHandler
   package:
     artifact: 'target/${self:service}-${self:provider.stage}.jar'
   events:
     - http:
-        path: /products/{id}
+        path: /contacts/{id}
         method: delete
