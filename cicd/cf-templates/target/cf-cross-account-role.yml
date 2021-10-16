@@ -55,6 +55,8 @@ Resources:
               - iam:PutRolePolicy
               - iam:AttachRolePolicy
               - iam:DeleteRolePolicy
+              - iam:AddRoleToInstanceProfile
+              - iam:CreateInstanceProfile
             Resource: '*'
           - Sid: S3FullAccess
             # To Get and Put deployment artifacts in serverless deployment bucket
