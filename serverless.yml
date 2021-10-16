@@ -75,7 +75,7 @@ resources:
   - ${file(resources/s3.yml)}
   - ${file(resources/vpc.yml)}
   - ${file(resources/dynamodb.yml)}
-  # - ${file(resources/emr.yml)}
+  - ${file(resources/emr.yml)}
 
 package:
   individually: true

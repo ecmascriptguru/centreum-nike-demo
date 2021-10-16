@@ -51,7 +51,10 @@ Resources:
               - iam:PassRole
               - iam:GetRole
               - iam:CreateRole
+              - iam:DeleteRole
               - iam:PutRolePolicy
+              - iam:AttachRolePolicy
+              - iam:DeleteRolePolicy
             Resource: '*'
           - Sid: S3FullAccess
             # To Get and Put deployment artifacts in serverless deployment bucket
@@ -107,9 +110,14 @@ Resources:
           - Sid: Ec2
             Effect: Allow
             Action:
-              - ec2:DescribeSecurityGroups
-              - ec2:DescribeSubnets
-              - ec2:DescribeVpcs
+              # - ec2:CreateSecurityGroup
+              # - ec2:DescribeSecurityGroups
+              # - ec2:CreateSubnet
+              # - ec2:DescribeSubnets
+              # - ec2:CreateVpc
+              # - ec2:DescribeVpcs
+              # - ec2:allocateAddress
+              - ec2:*
             Resource: '*'
 
   CFExecutionRole:
