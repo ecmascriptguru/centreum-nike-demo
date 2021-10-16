@@ -4,7 +4,6 @@ frameworkVersion: '2'
 
 custom:
   contactsTable: contactsTable
-  productsTable: productsTable
   csvImportBucketName: nike-${self:provider.stage}.csv.import.centreum.com
   logBucketName: nike-${self:provider.stage}-logs.centreum.com
   pythonRequirements:
@@ -20,7 +19,6 @@ provider:
   region: us-east-1
   environment:
     CONTACTS_TABLE: ${self:custom.contactsTable}
-    PRODUCTS_TABLE: ${self:custom.productsTable}
     SUBNET_ID: !Ref PrivateSubnetC
     EMR_LOGS_BUCKET:
       Ref: LogBucket
