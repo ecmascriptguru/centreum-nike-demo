@@ -70,70 +70,68 @@ def start_emr_job(event, context):
                     'Name': 'creating dynamodb table',
                     'ActionOnFailure': 'CONTINUE',
                     'HadoopJarStep': {
-                            'Jar': 'command-runner.jar',
-                            'Args': ['hive-script',
-                                     '--run-hive-script',
-                                     '--args',
-                                     '-f',
-                                     's3://{}/scripts/step1.q'.format(
-                                         os.environ['CSV_IMPORT_BUCKET']),
-                                     '-d',
-                                     'DYNAMODBTABLE={}'.format(
-                                         os.environ["CONTACTS_TABLE"])]
+                        'Jar': 'command-runner.jar',
+                        'Args': [
+                            'hive-script',
+                            '--run-hive-script',
+                            '--args',
+                            '-f',
+                            f's3://{os.environ["CSV_IMPORT_BUCKET"]}/scripts/step1.q',
+                            '-d',
+                            f'DYNAMODBTABLE={os.environ["CONTACTS_TABLE"]}'
+                        ]
                     }
                 },
                 {
                     'Name': 'creating csv table',
                     'ActionOnFailure': 'CONTINUE',
                     'HadoopJarStep': {
-                            'Jar': 'command-runner.jar',
-                            'Args': ['hive-script',
-                                     '--run-hive-script',
-                                     '--args',
-                                     '-f',
-                                     's3://{}/scripts/step2.q'.format(
-                                         os.environ['CSV_IMPORT_BUCKET']),
-                                     '-d',
-                                     'INPUT=s3://{}'.format(
-                                         os.environ['CSV_IMPORT_BUCKET']),
-                                     '-d',
-                                     'TODAY={}'.format(
-                                         datetime.today().strftime('%Y-%m-%d'))]
+                        'Jar': 'command-runner.jar',
+                        'Args': [
+                            'hive-script',
+                            '--run-hive-script',
+                            '--args',
+                            '-f',
+                            f's3://{os.environ["CSV_IMPORT_BUCKET"]}/scripts/step2.q',
+                            '-d',
+                            f'INPUT=s3://{os.environ["CSV_IMPORT_BUCKET"]}',
+                            '-d',
+                            f'TODAY={datetime.today().strftime("%Y-%m-%d")}'
+                        ]
                     }
                 },
                 {
                     'Name': 'adding partition',
                     'ActionOnFailure': 'CONTINUE',
                     'HadoopJarStep': {
-                            'Jar': 'command-runner.jar',
-                            'Args': ['hive-script',
-                                     '--run-hive-script',
-                                     '--args',
-                                     '-f',
-                                     's3://{}/scripts/step3.q'.format(
-                                         os.environ['CSV_IMPORT_BUCKET']),
-                                     '-d',
-                                     'INPUT=s3://{}'.format(
-                                         os.environ['CSV_IMPORT_BUCKET']),
-                                     '-d',
-                                     'TODAY={}'.format(
-                                         datetime.today().strftime('%Y-%m-%d'))]
+                        'Jar': 'command-runner.jar',
+                        'Args': [
+                            'hive-script',
+                            '--run-hive-script',
+                            '--args',
+                            '-f',
+                            f's3://{os.environ["CSV_IMPORT_BUCKET"]}/scripts/step3.q',
+                            '-d',
+                            f'INPUT=s3://{os.environ["CSV_IMPORT_BUCKET"]}',
+                            '-d',
+                            f'TODAY={datetime.today().strftime("%Y-%m-%d")}'
+                        ]
                     }
                 },
                 {
                     'Name': 'import date to dynamodb',
                     'ActionOnFailure': 'TERMINATE_CLUSTER',
                     'HadoopJarStep': {
-                            'Jar': 'command-runner.jar',
-                            'Args': ['hive-script',
-                                     '--run-hive-script',
-                                     '--args',
-                                     '-f',
-                                     's3://{}/scripts/step4.q'.format(
-                                         os.environ['CSV_IMPORT_BUCKET']),
-                                     '-d',
-                                     'TODAY={}'.format(
-                                         datetime.today().strftime('%Y-%m-%d'))]
+                        'Jar': 'command-runner.jar',
+                        'Args': [
+                            'hive-script',
+                            '--run-hive-script',
+                            '--args',
+                            '-f',
+                            f's3://{os.environ["CSV_IMPORT_BUCKET"]}/scripts/step4.q',
+                            '-d',
+                            f'TODAY={datetime.today().strftime("%Y-%m-%d")}'
+                        ]
                     }
                 }
             ],
