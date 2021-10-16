@@ -23,7 +23,7 @@ phases:
       - cd $CODEBUILD_SRC_DIR
       ##################################### Generate serverless package. ###################################
       - . ./cicd/scripts/aws-profile-setup.sh
-      - mvn clean install
+      - mvn clean install -Denv=$STAGE
       - sls package --package serverless-package --stage $STAGE --targetAccountId $TARGET_ACCOUNT_ID --cfnRoleArn $CF_EXECUTION_ROLE
       - ls serverless-package
       # #######################################################################################################

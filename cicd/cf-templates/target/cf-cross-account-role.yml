@@ -104,6 +104,13 @@ Resources:
               - elasticmapreduce:DescribeCluster
             Resource:
               - '*'
+          - Sid: Ec2
+            Effect: Allow
+            Action:
+              - ec2:DescribeSecurityGroups
+              - ec2:DescribeSubnets
+              - ec2:DescribeVpcs
+            Resource: '*'
 
   CFExecutionRole:
     Type: AWS::IAM::Role

@@ -4,7 +4,7 @@
   <groupId>com.serverless</groupId>
   <artifactId>nike-devops-demo</artifactId>
   <packaging>jar</packaging>
-  <version>dev</version>
+  <version>${env}</version>
   <name>nike-devops-demo</name>
 
   <properties>

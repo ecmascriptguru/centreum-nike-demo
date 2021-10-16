@@ -13,7 +13,6 @@ logger.setLevel(logging.INFO)
 
 def start_emr_job(event, context):
     try:
-        put_dump_record_to_db()
         cluster_id = emr.run_job_flow(
             Name='test_emr_job',
             LogUri="s3://{}".format(os.environ['EMR_LOGS_BUCKET']),
@@ -144,25 +143,3 @@ def start_emr_job(event, context):
     except Exception as e:
         logger.error(e)
         raise
-
-
-def put_dump_record_to_db():
-    table = dynamodb.Table(os.environ["CONTACTS_TABLE"])
-    if table.item_count == 0:
-        table.put_item(
-            Item={'id': 'NA',
-                  'full_name': 'demo user',
-                  'gender': 'M',
-                  'address': 'NA',
-                  'language': ["English"]})
-
-
-def put_step_scripts_to_s3():
-    root_path = Path(__file__).parent.parent
-    scripts = ["scripts/step1.q",
-               "scripts/step2.q",
-               "scripts/step3.q",
-               "scripts/step4.q"]
-    for script in scripts:
-        s3.Bucket(os.environ['CSV_IMPORT_BUCKET']).upload_file(
-            '{}/{}'.format(root_path, script), script)
