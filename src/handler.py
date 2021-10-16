@@ -134,10 +134,8 @@ def start_emr_job(event, context):
                 }
             ],
             VisibleToAllUsers=True,
-            JobFlowRole=os.environ.get('JOB_FLOW_ROLE'),
+            JobFlowRole=os.environ.get('INSTANCE_PROFILE'),
             ServiceRole=os.environ.get('SERVICE_ROLE'),
-            # JobFlowRole='EMR_EC2_DefaultRole',
-            # ServiceRole='EMR_DefaultRole',
         )
         logger.info('cluster {} created with the step...'.format(
             cluster_id['JobFlowId']))

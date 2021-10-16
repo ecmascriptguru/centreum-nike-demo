@@ -25,7 +25,7 @@ public class CreateContactHandler implements RequestHandler<Map<String, Object>,
           // create the Contact object for post
           Contact contact = new Contact();
           // contact.setId(body.get("id").asText());
-          contact.setFullName(body.get("full_name").asText());
+          contact.setFullName(body.get("fullName").asText());
           contact.setEmail(body.get("email").asText());
           contact.setGender(body.get("gender").asText());
           contact.setAddress(body.get("address").asText());
