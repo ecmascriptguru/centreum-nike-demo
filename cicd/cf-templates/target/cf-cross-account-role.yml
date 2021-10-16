@@ -7,10 +7,12 @@ Parameters:
     Description: Please give the project name. This will be used all across the stack as identifier.
     Type: String
     Default: centreum-demo
+    AllowedValues:
+      - centreum-demo
   ToolsAccountID:
     Description : Account ID of the TOOLS AWS Account that initiates code deployment to this account.
     Type: String
-    Default: '058464901497'
+    Default: ''
     ConstraintDescription: Must be a valid AWS Account ID without hyphens.
     AllowedPattern: '\d{12}'
     MinLength: 12
@@ -94,6 +96,12 @@ Resources:
             Effect: Allow
             Action:
               - dynamodb:*
+            Resource:
+              - '*'
+          - Sid: ElasticMapReduce
+            Effect: Allow
+            Action:
+              - elasticmapreduce:DescribeCluster
             Resource:
               - '*'
 

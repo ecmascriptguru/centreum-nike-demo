@@ -14,7 +14,7 @@ Parameters:
   DevAccountID:
     Description : Dev Account ID of the target account where the deployment will happen.
     Type: String
-    Default: '561789658853'
+    Default: ''
     ConstraintDescription: Must be a valid AWS Account ID without hyphens.
     AllowedPattern: '\d{12}'
     MinLength: 12
@@ -22,7 +22,7 @@ Parameters:
   ProdAccountID:
     Description: Production Account ID of the target account where the deployment will happen.
     Type: String
-    Default: '534732747354'
+    Default: ''
     ConstraintDescription: Must be a valid AWS Account ID without hyphens.
     AllowedPattern: '\d{12}'
     MinLength: 12
