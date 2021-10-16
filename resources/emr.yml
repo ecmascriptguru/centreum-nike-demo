@@ -40,65 +40,65 @@ Resources:
       Roles:
         - Ref: JobFlowRole
 
-  Cluster:
-    Type: AWS::EMR::Cluster
-    Properties:
-      Name: ${self:service}
-      VisibleToAllUsers: true
-      LogUri: !Join ['', ['s3://', !Ref LogBucket, '/emr-logs/']]
-      # "s3://aiyi.hive/emr-logs/"
-      ReleaseLabel: emr-5.33.1
-      Applications:
-        - Name: Hive
-        - Name: Hue
-        - Name: Mahout
-        - Name: Pig
-        - Name: Tez
-      JobFlowRole:
-        Ref: InstanceProfile
-      ServiceRole:
-        Ref: ServiceRole
-      ScaleDownBehavior: TERMINATE_AT_TASK_COMPLETION
-      Configurations:
-        - Classification: hive-site
-          ConfigurationProperties:
-            hive.execution.engine: mr
-      Instances:
-        TerminationProtected: false
-        Ec2KeyName: emr
-        # Ec2SubnetId: !Ref PrivateSubnetC
-        Ec2SubnetId: !Ref PublicSubnetC
-        AdditionalMasterSecurityGroups:
-          - Ref: SecurityGroup
-        MasterInstanceGroup:
-          InstanceCount: 1
-          InstanceType: m1.medium
-          Market: ON_DEMAND
-          Name: MasterInstance
-        CoreInstanceGroup:
-          InstanceCount: 1
-          InstanceType: m1.medium
-          Market: ON_DEMAND
-          Name: CoreInstance
-  CreateDBMetaTable:
-    Type: AWS::EMR::Step
-    Properties:
-      ActionOnFailure: CONTINUE
-      HadoopJarStep:
-        Args:
-          - hive-script
-          - "--run-hive-script"
-          - "--args"
-          - "-f"
-          - "Fn::Join":
-              - "/"
-              - - "s3:/"
-                - !Ref LogBucket
-                - "scripts/dynamodb_hive.q"
-          - "-d"
-          - DYNAMODBTABLE=${self:custom.contactsTable}
-        Jar: command-runner.jar
-        StepProperties: []
-      JobFlowId:
-        Ref: Cluster
-      Name: Create Dynamodb Metadata Table
+  # Cluster:
+  #   Type: AWS::EMR::Cluster
+  #   Properties:
+  #     Name: ${self:service}
+  #     VisibleToAllUsers: true
+  #     LogUri: !Join ['', ['s3://', !Ref LogBucket, '/emr-logs/']]
+  #     # "s3://aiyi.hive/emr-logs/"
+  #     ReleaseLabel: emr-5.33.1
+  #     Applications:
+  #       - Name: Hive
+  #       - Name: Hue
+  #       - Name: Mahout
+  #       - Name: Pig
+  #       - Name: Tez
+  #     JobFlowRole:
+  #       Ref: InstanceProfile
+  #     ServiceRole:
+  #       Ref: ServiceRole
+  #     ScaleDownBehavior: TERMINATE_AT_TASK_COMPLETION
+  #     Configurations:
+  #       - Classification: hive-site
+  #         ConfigurationProperties:
+  #           hive.execution.engine: mr
+  #     Instances:
+  #       TerminationProtected: false
+  #       Ec2KeyName: emr
+  #       # Ec2SubnetId: !Ref PrivateSubnetC
+  #       Ec2SubnetId: !Ref PublicSubnetC
+  #       AdditionalMasterSecurityGroups:
+  #         - Ref: SecurityGroup
+  #       MasterInstanceGroup:
+  #         InstanceCount: 1
+  #         InstanceType: m1.medium
+  #         Market: ON_DEMAND
+  #         Name: MasterInstance
+  #       CoreInstanceGroup:
+  #         InstanceCount: 1
+  #         InstanceType: m1.medium
+  #         Market: ON_DEMAND
+  #         Name: CoreInstance
+  # CreateDBMetaTable:
+  #   Type: AWS::EMR::Step
+  #   Properties:
+  #     ActionOnFailure: CONTINUE
+  #     HadoopJarStep:
+  #       Args:
+  #         - hive-script
+  #         - "--run-hive-script"
+  #         - "--args"
+  #         - "-f"
+  #         - "Fn::Join":
+  #             - "/"
+  #             - - "s3:/"
+  #               - !Ref LogBucket
+  #               - "scripts/dynamodb_hive.q"
+  #         - "-d"
+  #         - DYNAMODBTABLE=${self:custom.contactsTable}
+  #       Jar: command-runner.jar
+  #       StepProperties: []
+  #     JobFlowId:
+  #       Ref: Cluster
+  #     Name: Create Dynamodb Metadata Table
