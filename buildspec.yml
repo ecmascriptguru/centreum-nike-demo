@@ -30,6 +30,8 @@ phases:
       # # Deploy serverless package
       - sls deploy --package serverless-package --stage $STAGE --targetAccountId $TARGET_ACCOUNT_ID --cfnRoleArn $CF_EXECUTION_ROLE
       # - sls deploy --stage $STAGE
+      - echo Copying scripts to s3
+      - aws s3 cp scripts/ s3://nike-$STAGE.csv.import.centreum.com/scripts --recursive
       - echo "End Deploy"
 
   post_build:

@@ -66,11 +66,6 @@ provider:
                 - "/"
                 - - { "Fn::GetAtt": [ContactsTable, Arn] }
                   - "index/*"
-            - "Fn::GetAtt": [ProductsTable, Arn]
-            - "Fn::Join":
-                - "/"
-                - - { "Fn::GetAtt": [ProductsTable, Arn] }
-                  - "index/*"
 
 functions:
   - ${file(resources/functions/python_emr.yml)}

@@ -14,7 +14,6 @@ logger.setLevel(logging.INFO)
 def start_emr_job(event, context):
     try:
         put_dump_record_to_db()
-        put_step_scripts_to_s3()
         cluster_id = emr.run_job_flow(
             Name='test_emr_job',
             LogUri="s3://{}".format(os.environ['EMR_LOGS_BUCKET']),
