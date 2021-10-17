@@ -117,7 +117,7 @@ def start_emr_job(event, context):
                     }
                 },
                 {
-                    'Name': 'import date to dynamodb',
+                    'Name': 'import data to dynamodb',
                     'ActionOnFailure': 'TERMINATE_CLUSTER',
                     'HadoopJarStep': {
                         'Jar': 'command-runner.jar',

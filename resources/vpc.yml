@@ -117,7 +117,7 @@ Resources:
       Tags:
       - Key: Name
         Value: Public
-  PublicRoute1:   # Public route table has direct routing to IGW:
+  PublicRoute:   # Public route table has direct routing to IGW:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
     Properties:
@@ -125,47 +125,17 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  PrivateRouteTableA:
+  PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
       - Key: Name
         Value: Private
-  PrivateRouteTableARoute1: # Private route table can access web via NAT (created below)
+  PrivateRouteTableRoute: # Private route table can access web via NAT (created below)
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PrivateRouteTableA
-      DestinationCidrBlock: 0.0.0.0/0
-      # Route traffic through the NAT Gateway:
-      NatGatewayId: !Ref NATGateway
-
-  PrivateRouteTableB:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-      - Key: Name
-        Value: Private
-  PrivateRouteTableBRoute1:            # Private route table can access web via NAT (created below)
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTableB
-      DestinationCidrBlock: 0.0.0.0/0
-      # Route traffic through the NAT Gateway:
-      NatGatewayId: !Ref NATGateway
-
-  PrivateRouteTableC:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-      - Key: Name
-        Value: Private
-  PrivateRouteTableCRoute1: # Private route table can access web via NAT (created below)
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTableC
+      RouteTableId: !Ref PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       # Route traffic through the NAT Gateway:
       NatGatewayId: !Ref NATGateway
@@ -189,17 +159,17 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnetA
-      RouteTableId: !Ref PrivateRouteTableA
+      RouteTableId: !Ref PrivateRouteTable
   PrivateSubnetBRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnetB
-      RouteTableId: !Ref PrivateRouteTableB
+      RouteTableId: !Ref PrivateRouteTable
   PrivateSubnetCRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnetC
-      RouteTableId: !Ref PrivateRouteTableC
+      RouteTableId: !Ref PrivateRouteTable
 
   FlowLogs:
     Type: "AWS::EC2::FlowLog"

@@ -1,11 +1,11 @@
-service: nike-devops-demo
+service: nike-emr-ming
 
 frameworkVersion: '2'
 
 custom:
   contactsTable: contactsTable
-  csvImportBucketName: nike-${self:provider.stage}.csv.import.centreum.com
-  logBucketName: nike-${self:provider.stage}-logs.centreum.com
+  csvImportBucketName: nike-${self:provider.stage}-#{AWS::AccountId}.csv-emr-demo
+  logBucketName: nike-${self:provider.stage}-#{AWS::AccountId}.csv-emr-demo-log
   pythonRequirements:
     pythonBin: python3
   tableThroughputs:
@@ -20,8 +20,7 @@ provider:
   environment:
     CONTACTS_TABLE: ${self:custom.contactsTable}
     SUBNET_ID: !Ref PrivateSubnetC
-    EMR_LOGS_BUCKET:
-      Ref: LogBucket
+    EMR_LOGS_BUCKET: ${self:custom.logBucketName}
     CSV_IMPORT_BUCKET: ${self:custom.csvImportBucketName}
 
   vpc:
@@ -54,7 +53,8 @@ provider:
             - "Fn::Join":
                 - ""
                 - - "arn:aws:s3:::"
-                  - ${self:custom.csvImportBucketName}
+                  # - ${self:custom.csvImportBucketName}
+                  - !Ref CsvImportS3Bucket
                   - "/*"
             - !Join ['', ['arn:aws:s3:::', !Ref LogBucket, '/emr-logs/*']]
         - Effect: "Allow"

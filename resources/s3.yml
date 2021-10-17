@@ -3,6 +3,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
+      BucketName: ${self:custom.logBucketName}
   CsvImportS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
